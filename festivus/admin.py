@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Person, Payment, PlaceCategory, Place, EventType, Event
+from .models import Person, Payment, PlaceCategory, Place, EventType, Event, Transaction
 
 class PersonAdmin(admin.ModelAdmin):
     list_display = ('first_name', 'last_name', 'birth_date', 'email')
@@ -10,7 +10,7 @@ class PersonAdmin(admin.ModelAdmin):
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ('person', 'month', 'amount', 'currency', 'enrolled')
     list_filter = ('year', 'month', 'currency', 'enrolled')
-    search_fields = ('person__first_name', 'amount')
+    search_fields = ('person__first_name', 'amount', 'comment')
 
 class PlacesCategoryAdmin(admin.ModelAdmin):
     search_fields = ('name', '')
@@ -24,9 +24,14 @@ class EventTypeAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description')
 
 class EventAdmin(admin.ModelAdmin):
-    list_display = ('event_type', 'victim', 'event_date', 'gift_card')
+    list_display = ('event_type', 'victim', 'name', 'event_date', 'gift_card')
     list_filter = ('event_type', 'organizer')
-    search_fields = ('event_type__name', 'description', 'comment', 'location')
+    search_fields = ('event_type__name', 'name', 'description', 'comment', 'location')
+
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = ('event', 'transaction_date', 'transaction_type')
+    list_filter = ('transaction_type', 'currency')
+    search_fields = ('event__victim', 'note', 'comment')
 
 admin.site.register(Person, PersonAdmin)
 admin.site.register(Payment, PaymentAdmin)
@@ -34,3 +39,5 @@ admin.site.register(PlaceCategory, PlacesCategoryAdmin)
 admin.site.register(Place, PlaceAdmin)
 admin.site.register(EventType, EventTypeAdmin)
 admin.site.register(Event, EventAdmin)
+admin.site.register(Transaction, TransactionAdmin)
+
