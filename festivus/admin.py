@@ -1,43 +1,78 @@
 from django.contrib import admin
 
-from .models import Person, Payment, PlaceCategory, Place, EventType, Event, Transaction
+from .models import Person, Team, Membership, Payment, PlaceClassification, Place, EventType, Event, Transaction
 
+#most probably we should have reporting for a specific event including total cost
+#maybe later on stats on expenses and most expesive events
 class PersonAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'birth_date', 'email')
-    list_filter = ('gender', 'marital_status')
-    search_fields = ('first_name', 'last_name')
+    list_display = ('first_name', 'last_name', 'birth_date', 'email', 'squad_member')
+    list_filter = ('team', 'gender', 'marital_status', 'squad_member')
+    search_fields = ('first_name', 'last_name', 'team__name')
+
+class TeamAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description')
+    search_fields = ('name', 'description')
+
+class MembershipAdmin(admin.ModelAdmin):
+    list_display = ('person', 'month', 'amount', 'currency')
+    list_filter = ('year', 'month', 'currency', 'collected_by__first_name')
+    search_fields = ('person__first_name', 'amount', 'notes')
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj: # disable editing the amount of an existing payment since it links to transactions
+            return self.readonly_fields + ('amount', 'currency')
+        return self.readonly_fields
 
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('person', 'month', 'amount', 'currency', 'enrolled')
-    list_filter = ('year', 'month', 'currency', 'enrolled')
-    search_fields = ('person__first_name', 'amount', 'comment')
+    list_display = ('event', 'amount', 'currency', 'payment_date', 'notes')
+    list_filter = ('event__event_type__name', 'payment_date', 'notes')
+    search_fields = ('event__name', 'amount', 'notes')
+    def has_delete_permission(self, request, obj=None):
+        return False
 
-class PlacesCategoryAdmin(admin.ModelAdmin):
-    search_fields = ('name', '')
+    def get_readonly_fields(self, request, obj=None):
+        if obj: # disable editing the amount of an existing payment since it links to transactions
+            return self.readonly_fields + ('amount', 'currency')
+        return self.readonly_fields
+
+class PlaceClassificationAdmin(admin.ModelAdmin):
+    search_fields = ('name',)
 
 class PlaceAdmin(admin.ModelAdmin):
-    list_display = ('category', 'name', 'rating')
-    list_filter = ('category', 'rating')
+    list_display = ('classification', 'name', 'rating')
+    list_filter = ('classification', 'rating')
     search_fields = ('name', 'description', 'comment')
 
 class EventTypeAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description')
 
 class EventAdmin(admin.ModelAdmin):
-    list_display = ('event_type', 'victim', 'name', 'event_date', 'gift_card')
-    list_filter = ('event_type', 'organizer')
-    search_fields = ('event_type__name', 'name', 'description', 'comment', 'location')
+    list_display = ('name', 'event_type', 'organizer', 'event_date', 'gift_card', 'total')
+    list_filter = ('event_type__name', 'event_date', 'organizer__first_name')
+    search_fields = ('event_date', 'notes', 'location')
+    # inlines = [
+    #     EventVictimInline,
+    # ]
 
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('event', 'transaction_date', 'transaction_type')
-    list_filter = ('transaction_type', 'currency')
-    search_fields = ('event__victim', 'note', 'comment')
+    #Add event_total To list_display and assert it's equal to total
+    list_display = ('event', 'transaction_date', 'transaction_type', 'amount', 'currency', 'dollar_total', 'note')
+    list_filter = ('transaction_type', 'currency', 'transaction_date', 'description')
+    search_fields = ('event__targets__first_name', 'event__targets__last_name', 'note', 'event__name')
+    readonly_fields = ('total',)
+
+    def event_total(self, obj):
+        return obj.event_total
 
 admin.site.register(Person, PersonAdmin)
+admin.site.register(Team, TeamAdmin)
 admin.site.register(Payment, PaymentAdmin)
-admin.site.register(PlaceCategory, PlacesCategoryAdmin)
+admin.site.register(PlaceClassification, PlaceClassificationAdmin)
 admin.site.register(Place, PlaceAdmin)
 admin.site.register(EventType, EventTypeAdmin)
 admin.site.register(Event, EventAdmin)
 admin.site.register(Transaction, TransactionAdmin)
+admin.site.register(Membership, MembershipAdmin)
 
