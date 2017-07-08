@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.core.exceptions import ValidationError
 import datetime
 
-from .models import CurrencyUtils, Transaction, Person, EventType, Event, Membership, Payment, USD, LBP, CREDIT, DEBIT
+from .models import CurrencyUtils, Transaction, Person, EventType, Event, Membership, Payment, Constants
 
 THRESHOLD = 5000000
 
@@ -55,205 +55,205 @@ class TestUtils(object):
         return transaction
 
 class CurrencyUtilsTest(TestCase):
-    # def test_usd_from_usd_conversion(self):
+    # def test_Constants.USD_from_Constants.USD_conversion(self):
     #     for value in range(0, THRESHOLD):
-    #         amount = CurrencyUtils.to_usd(value, USD)
+    #         amount = CurrencyUtils.to_Constants.USD(value, Constants.USD)
     #         self.assertEqual(amount, amount/1)
 
-    def test_usd_from_lbp_conversion(self):
-        amount = CurrencyUtils.to_usd(1500, LBP)
+    def test_USD_from_LBP_conversion(self):
+        amount = CurrencyUtils.to_usd(1500, Constants.LBP)
         self.assertEqual(amount, 1)
 
-        amount = CurrencyUtils.to_usd(5000, LBP)
+        amount = CurrencyUtils.to_usd(5000, Constants.LBP)
         self.assertEqual(amount, 3.3333333333333335)
 
-        amount = CurrencyUtils.to_usd(10000, LBP)
+        amount = CurrencyUtils.to_usd(10000, Constants.LBP)
         self.assertEqual(amount, 6.666666666666667)
 
-        amount = CurrencyUtils.to_usd(1500, LBP)
+        amount = CurrencyUtils.to_usd(1500, Constants.LBP)
         self.assertEqual(amount, 1)
 
-        amount = CurrencyUtils.to_usd(15000, LBP)
+        amount = CurrencyUtils.to_usd(15000, Constants.LBP)
         self.assertEqual(amount, 10)
 
-        amount = CurrencyUtils.to_usd(30000, LBP)
+        amount = CurrencyUtils.to_usd(30000, Constants.LBP)
         self.assertEqual(amount, 20)
 
-        amount = CurrencyUtils.to_usd(45000, LBP)
+        amount = CurrencyUtils.to_usd(45000, Constants.LBP)
         self.assertEqual(amount, 30)
 
-        amount = CurrencyUtils.to_usd(75000, LBP)
+        amount = CurrencyUtils.to_usd(75000, Constants.LBP)
         self.assertEqual(amount, 50)
 
-        amount = CurrencyUtils.to_usd(150000, LBP)
+        amount = CurrencyUtils.to_usd(150000, Constants.LBP)
         self.assertEqual(amount, 100)
 
     def test_normalize_transaction_amount(self):
-        amount = CurrencyUtils.normalize_transaction_amount(1, USD, CREDIT)
+        amount = CurrencyUtils.normalize_transaction_amount(1, Constants.USD, Constants.CREDIT)
         self.assertEqual(amount, 1)
 
-        amount = CurrencyUtils.normalize_transaction_amount(1, USD, DEBIT)
+        amount = CurrencyUtils.normalize_transaction_amount(1, Constants.USD, Constants.DEBIT)
         self.assertEqual(amount, -1)
 
-        amount = CurrencyUtils.normalize_transaction_amount(100, USD, CREDIT)
+        amount = CurrencyUtils.normalize_transaction_amount(100, Constants.USD, Constants.CREDIT)
         self.assertEqual(amount, 100)
 
-        amount = CurrencyUtils.normalize_transaction_amount(100, USD, DEBIT)
+        amount = CurrencyUtils.normalize_transaction_amount(100, Constants.USD, Constants.DEBIT)
         self.assertEqual(amount, -100)
 
-        amount = CurrencyUtils.normalize_transaction_amount(1500, LBP, CREDIT)
+        amount = CurrencyUtils.normalize_transaction_amount(1500, Constants.LBP, Constants.CREDIT)
         self.assertEqual(amount, 1)
 
-        amount = CurrencyUtils.normalize_transaction_amount(1500, LBP, DEBIT)
+        amount = CurrencyUtils.normalize_transaction_amount(1500, Constants.LBP, Constants.DEBIT)
         self.assertEqual(amount, -1)
 
-        amount = CurrencyUtils.normalize_transaction_amount(15000, LBP, CREDIT)
+        amount = CurrencyUtils.normalize_transaction_amount(15000, Constants.LBP, Constants.CREDIT)
         self.assertEqual(amount, 10)
 
-        amount = CurrencyUtils.normalize_transaction_amount(15000, LBP, DEBIT)
+        amount = CurrencyUtils.normalize_transaction_amount(15000, Constants.LBP, Constants.DEBIT)
         self.assertEqual(amount, -10)
 
-        amount = CurrencyUtils.normalize_transaction_amount(150000, LBP, CREDIT)
+        amount = CurrencyUtils.normalize_transaction_amount(150000, Constants.LBP, Constants.CREDIT)
         self.assertEqual(amount, 100)
 
-        amount = CurrencyUtils.normalize_transaction_amount(150000, LBP, DEBIT)
+        amount = CurrencyUtils.normalize_transaction_amount(150000, Constants.LBP, Constants.DEBIT)
         self.assertEqual(amount, -100)
 
 class TransactionModelTest(TestCase):
     def test_string_representation(self):
-        transaction = TestUtils.get_transaction(1, USD, CREDIT)
+        transaction = TestUtils.get_transaction(1, Constants.USD, Constants.CREDIT)
         transaction.save()
         self.assertEqual(str(transaction), "Transaction-1")
 
     def test_cannot_edit_existing(self):
-        transaction = TestUtils.get_transaction(1, USD, CREDIT)
+        transaction = TestUtils.get_transaction(1, Constants.USD, Constants.CREDIT)
         transaction.note = "TEST"
         transaction.save()
         retrieved_transaction = Transaction.objects.last()
         self.assertEqual(retrieved_transaction.amount, 1)
-        self.assertEqual(retrieved_transaction.currency, USD)
-        self.assertEqual(retrieved_transaction.transaction_type, CREDIT)
+        self.assertEqual(retrieved_transaction.currency, Constants.USD)
+        self.assertEqual(retrieved_transaction.transaction_type, Constants.CREDIT)
         self.assertEqual(retrieved_transaction.note, "TEST")
         with self.assertRaises(ValidationError):
             retrieved_transaction.save()
 
     def test_cannot_overdraw(self):
-        transaction1 = TestUtils.get_transaction(1, USD, CREDIT)
+        transaction1 = TestUtils.get_transaction(1, Constants.USD, Constants.CREDIT)
         transaction1.save()
         self.assertEqual(transaction1.amount, 1.00)
         self.assertEqual(transaction1.total_amount, 1.00)
 
-        transaction2 = TestUtils.get_transaction(2, USD, DEBIT)
+        transaction2 = TestUtils.get_transaction(2, Constants.USD, Constants.DEBIT)
         with self.assertRaises(ValidationError):
             transaction2.save()
 
-    def test_currency_conversion_credit(self):
-        transaction_usd = TestUtils.get_transaction(1, USD, CREDIT)
+    def test_currency_conversion__credit(self):
+        transaction_usd = TestUtils.get_transaction(1, Constants.USD, Constants.CREDIT)
         transaction_usd.save()
-        transaction_lbp = TestUtils.get_transaction(1500, LBP, CREDIT)
+        transaction_lbp = TestUtils.get_transaction(1500, Constants.LBP, Constants.CREDIT)
         self.assertEqual(transaction_lbp.amount, 1500)
         self.assertEqual(transaction_lbp.total, 1)
         transaction_lbp.save()
         self.assertEqual(transaction_lbp.amount, 1500)
-        self.assertEqual(transaction_lbp.currency, LBP)
+        self.assertEqual(transaction_lbp.currency, Constants.LBP)
         self.assertEqual(transaction_lbp.total_amount, 2)
 
     def test_currency_conversion_debit(self):
-        transaction_usd = TestUtils.get_transaction(1, USD, CREDIT)
+        transaction_usd = TestUtils.get_transaction(1, Constants.USD, Constants.CREDIT)
         transaction_usd.save()
         self.assertEqual(transaction_usd.amount, 1)
         self.assertEqual(transaction_usd.total, 1)
-        transaction_lbp = TestUtils.get_transaction(1500, LBP, DEBIT)
+        transaction_lbp = TestUtils.get_transaction(1500, Constants.LBP, Constants.DEBIT)
         self.assertEqual(transaction_lbp.amount, 1500)
         self.assertEqual(transaction_lbp.total, 1)
         transaction_lbp.save()
         self.assertEqual(transaction_lbp.amount, 1500)
-        self.assertEqual(transaction_lbp.currency, LBP)
+        self.assertEqual(transaction_lbp.currency, Constants.LBP)
         self.assertEqual(transaction_lbp.total, 0)
         #Just to make sure that the record we're testing is the last one
         retrieved_transaction = Transaction.objects.last()
         self.assertEqual(retrieved_transaction.total, 0)
 
     def test_transaction_calculations(self):
-        tr1_usd_credit = TestUtils.get_transaction(1, USD, CREDIT)
+        tr1_usd_credit = TestUtils.get_transaction(1, Constants.USD, Constants.CREDIT)
         tr1_usd_credit.save()
         self.assertEqual(tr1_usd_credit.amount, 1)
         self.assertEqual(tr1_usd_credit.total, 1)
 
-        tr100_usd_credit = TestUtils.get_transaction(100, USD, CREDIT)
-        tr100_usd_credit.save()
-        self.assertEqual(tr100_usd_credit.total, 101)
+        tr100_usd_Constants_credit = TestUtils.get_transaction(100, Constants.USD, Constants.CREDIT)
+        tr100_usd_Constants_credit.save()
+        self.assertEqual(tr100_usd_Constants_credit.total, 101)
         self.assertEqual(Transaction.objects.last().total, 101)
 
-        tr1500_lbp_credit = TestUtils.get_transaction(1500, LBP, CREDIT)
+        tr1500_lbp_credit = TestUtils.get_transaction(1500, Constants.LBP, Constants.CREDIT)
         tr1500_lbp_credit.save()
         self.assertEqual(tr1500_lbp_credit.total, 102)
         self.assertEqual(Transaction.objects.last().total, 102)
 
-        tr15000_lbp_credit = TestUtils.get_transaction(15000, LBP, CREDIT)
+        tr15000_lbp_credit = TestUtils.get_transaction(15000, Constants.LBP, Constants.CREDIT)
         tr15000_lbp_credit.save()
         self.assertEqual(tr15000_lbp_credit.total, 112)
         self.assertEqual(Transaction.objects.last().total, 112)
 
-        tr1_usd_debit = TestUtils.get_transaction(1, USD, DEBIT)
+        tr1_usd_debit = TestUtils.get_transaction(1, Constants.USD, Constants.DEBIT)
         tr1_usd_debit.save()
         self.assertEqual(tr1_usd_debit.total, 111)
         self.assertEqual(Transaction.objects.last().total, 111)
 
         retrieved_transaction = Transaction.objects.last()
         self.assertEqual(retrieved_transaction.total, 111)#Making sure that the total is accurate
-        tr150000_lbp_debit = TestUtils.get_transaction(150000, LBP, DEBIT)
+        tr150000_lbp_debit = TestUtils.get_transaction(150000, Constants.LBP, Constants.DEBIT)
         tr150000_lbp_debit.save()
         self.assertEqual(tr150000_lbp_debit.amount, 150000)
-        self.assertEqual(tr150000_lbp_debit.currency, LBP)
-        self.assertEqual(tr150000_lbp_debit.transaction_type, DEBIT)
+        self.assertEqual(tr150000_lbp_debit.currency, Constants.LBP)
+        self.assertEqual(tr150000_lbp_debit.transaction_type, Constants.DEBIT)
         self.assertEqual(tr150000_lbp_debit.total, 11)
 
-        tr10_usd_debit = TestUtils.get_transaction(10, USD, DEBIT)
+        tr10_usd_debit = TestUtils.get_transaction(10, Constants.USD, Constants.DEBIT)
         tr10_usd_debit.save()
         self.assertEqual(tr10_usd_debit.total, 1)
 
-        tr3000_lbp_debit = TestUtils.get_transaction(3000, LBP, DEBIT)
+        tr3000_lbp_debit = TestUtils.get_transaction(3000, Constants.LBP, Constants.DEBIT)
         with self.assertRaises(ValidationError):
             tr3000_lbp_debit.save()
 
-        tr2_usd_debit = TestUtils.get_transaction(2, USD, DEBIT)
+        tr2_usd_debit = TestUtils.get_transaction(2, Constants.USD, Constants.DEBIT)
         with self.assertRaises(ValidationError):
             tr2_usd_debit.save()
 
 class MembershipModelTest(TestCase):
     def test_membership_adds_trans_usd(self):
         self.assertEqual(Transaction.objects.count(), 0)
-        membership = TestUtils.get_membership('JAN', 2017, 10, USD)
+        membership = TestUtils.get_membership('JAN', 2017, 10, Constants.USD)
         self.assertEqual(Transaction.objects.count(), 1)
         self.assertEqual(membership.amount, 10)
         self.assertEqual(Transaction.objects.count(), 1)
         last_transaction = Transaction.objects.last()
         self.assertEqual(last_transaction.amount, 10)
-        self.assertEqual(last_transaction.currency, USD)
+        self.assertEqual(last_transaction.currency, Constants.USD)
         self.assertEqual(last_transaction.total, 10)
 
     def test_membership_adds_trans_lbp(self):
         self.assertEqual(Transaction.objects.count(), 0)
-        membership = TestUtils.get_membership('JAN', 2017, 1500, LBP)
+        membership = TestUtils.get_membership('JAN', 2017, 1500, Constants.LBP)
         self.assertEqual(Transaction.objects.count(), 1)
         self.assertEqual(membership.amount, 1500)
         self.assertEqual(Transaction.objects.count(), 1)
         last_transaction = Transaction.objects.last()
         self.assertEqual(last_transaction.amount, 1500)
-        self.assertEqual(last_transaction.currency, LBP)
+        self.assertEqual(last_transaction.currency, Constants.LBP)
         self.assertEqual(last_transaction.total, 1)
 
     def test_edit_membership_adds_no_trans(self):
         self.assertEqual(Transaction.objects.count(), 0)
-        membership = TestUtils.get_membership('JAN', 2017, 10, USD)
+        membership = TestUtils.get_membership('JAN', 2017, 10, Constants.USD)
         self.assertEqual(Membership.objects.count(), 1)
         self.assertEqual(Transaction.objects.count(), 1)
         self.assertEqual(membership.amount, 10)
         self.assertEqual(Transaction.objects.count(), 1)
         last_transaction = Transaction.objects.last()
         self.assertEqual(last_transaction.amount, 10)
-        self.assertEqual(last_transaction.currency, USD)
+        self.assertEqual(last_transaction.currency, Constants.USD)
         self.assertEqual(last_transaction.total, 10)
         """
         editing an existing membership should not affect insert a new transaction
@@ -273,7 +273,7 @@ class EventModelTest(TestCase):
         organizer = TestUtils.get_person()
 
         #Add a transaction so that we can withdraw
-        transaction = TestUtils.get_transaction(5000, USD, 2)
+        transaction = TestUtils.get_transaction(5000, Constants.USD, 2)
         transaction.save()
 
         #create the event
@@ -287,21 +287,21 @@ class EventModelTest(TestCase):
         event1.save()
         self.assertEqual(event1.event_type.name, event_name)
 
-        #create usd payment associated to the event
-        payment = TestUtils.get_payment(event1, 20, USD, "NOTES")
+        #create Constants.USD payment associated to the event
+        payment = TestUtils.get_payment(event1, 20, Constants.USD, "NOTES")
         payment.save()
 
-        #make sure we debited the exact amount
+        #make sure we Constants.DEBITed the exact amount
         transactions = Transaction.objects.all()
         self.assertEqual(transactions.count(), 2)
         last_transaction = Transaction.objects.last()
         self.assertEqual(last_transaction.total, 5000 - 20)
 
-        #create lbp payment associated to the event
-        payment = TestUtils.get_payment(event1, 300000, LBP, "NOTES")
+        #create Constants.LBP payment associated to the event
+        payment = TestUtils.get_payment(event1, 300000, Constants.LBP, "NOTES")
         payment.save()
 
-        #make sure we debited the exact amount
+        #make sure we Constants.DEBITed the exact amount
         transactions = Transaction.objects.all()
         self.assertEqual(transactions.count(), 3)
         last_transaction = Transaction.objects.last()
