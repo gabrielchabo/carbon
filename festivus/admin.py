@@ -4,9 +4,31 @@ from .models import Person, Team, Membership, Payment, PlaceClassification, Plac
 
 #most probably we should have reporting for a specific event including total cost
 #maybe later on stats on expenses and most expesive events
+
+class MonthFilter(admin.SimpleListFilter):
+    title = 'Month'
+    parameter_name = 'month'
+
+    def lookups(self, request, model_admin):
+        monthes = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+        month_filter = []
+        for i in range(len(monthes)):
+            month_filter.append((i+1, monthes[i]))
+        return month_filter
+    
+    def queryset(self, request, queryset):
+        excludes = []
+        if self.value():
+            for person in queryset.all():
+                if person.birth_date.month != int(self.value()):
+                    excludes.append(person.id)
+            return queryset.exclude(id__in=excludes)
+        return queryset
+
+
 class PersonAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'birth_date', 'email', 'squad_member')
-    list_filter = ('team', 'gender', 'marital_status', 'squad_member')
+    list_display = ('first_name', 'last_name', 'birth_date', 'email', 'squad_member', 'active')
+    list_filter = (MonthFilter, 'team', 'gender', 'marital_status', 'squad_member', 'active')
     search_fields = ('first_name', 'last_name', 'team__name')
 
 class TeamAdmin(admin.ModelAdmin):
@@ -50,11 +72,8 @@ class EventTypeAdmin(admin.ModelAdmin):
 
 class EventAdmin(admin.ModelAdmin):
     list_display = ('name', 'event_type', 'organizer', 'event_date', 'gift_card', 'total')
-    list_filter = ('event_type__name', 'event_date', 'organizer__first_name')
+    list_filter = ('event_type__name', 'event_date', 'order_from__name')
     search_fields = ('event_date', 'notes', 'location')
-    # inlines = [
-    #     EventVictimInline,
-    # ]
 
 class TransactionAdmin(admin.ModelAdmin):
     #Add event_total To list_display and assert it's equal to total

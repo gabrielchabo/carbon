@@ -5,55 +5,58 @@ from django.db.models.signals import pre_delete
 from django.dispatch.dispatcher import receiver
 import datetime
 import decimal
+import calendar
 
-EXCHANGE_RATE = 1500
-INSUFFICIENT_FUNDS = "Insufficient funds!"
-USD = 'USD'
-LBP = 'LBP'
-CURRENCY_CHOICES = (
-    (USD, '$'),
-    (LBP, 'LL'),
-)
+class Constants:
 
-JANUARY = 'JAN'
-FEBRUARY = 'FEB'
-MARCH = 'MAR'
-APRIL = 'APR'
-MAY = 'MAY'
-JUNE = 'JUN'
-JULY = 'JUL'
-AUGUST = 'AUG'
-SEPTEMBER = 'SEP'
-OCTOBER = 'OCT'
-NOVEMBER = 'NOV'
-DECEMBER = 'DEC'
-
-MONTH_CHOICES = (
-    (JANUARY, 'January'),
-    (FEBRUARY, 'February'),
-    (MARCH, 'March'),
-    (APRIL, 'April'),
-    (MAY, 'May'),
-    (JUNE, 'June'),
-    (JULY, 'July'),
-    (AUGUST, 'August'),
-    (SEPTEMBER, 'September'),
-    (OCTOBER, 'October'),
-    (NOVEMBER, 'November'),
-    (DECEMBER, 'December'),
-)
-
-YEAR_CHOICES = []
-for r in range(2016, (datetime.datetime.now().year+1)):
-    YEAR_CHOICES.append((r, r))
-
-DEBIT = "D"
-CREDIT = "C"
-
-TRANSACTION_CHOICES = (
-    (DEBIT, 'Debit'),
-    (CREDIT, 'Credit'),
-)
+    EXCHANGE_RATE = 1500
+    INSUFFICIENT_FUNDS = "Insufficient funds!"
+    USD = 'USD'
+    LBP = 'LBP'
+    CURRENCY_CHOICES = (
+        (USD, '$'),
+        (LBP, 'LL'),
+    )
+    
+    JANUARY = 'JAN'
+    FEBRUARY = 'FEB'
+    MARCH = 'MAR'
+    APRIL = 'APR'
+    MAY = 'MAY'
+    JUNE = 'JUN'
+    JULY = 'JUL'
+    AUGUST = 'AUG'
+    SEPTEMBER = 'SEP'
+    OCTOBER = 'OCT'
+    NOVEMBER = 'NOV'
+    DECEMBER = 'DEC'
+    
+    MONTH_CHOICES = (
+        (JANUARY, 'January'),
+        (FEBRUARY, 'February'),
+        (MARCH, 'March'),
+        (APRIL, 'April'),
+        (MAY, 'May'),
+        (JUNE, 'June'),
+        (JULY, 'July'),
+        (AUGUST, 'August'),
+        (SEPTEMBER, 'September'),
+        (OCTOBER, 'October'),
+        (NOVEMBER, 'November'),
+        (DECEMBER, 'December'),
+    )
+    
+    YEAR_CHOICES = []
+    for r in range(2016, (datetime.datetime.now().year+1)):
+        YEAR_CHOICES.append((r, r))
+    
+    DEBIT = "D"
+    CREDIT = "C"
+    
+    TRANSACTION_CHOICES = (
+        (DEBIT, 'Debit'),
+        (CREDIT, 'Credit'),
+    )
 
 def validate_phone(value):
     if not (value.isdigit() and len(value) == 8):
@@ -65,7 +68,7 @@ def validate_phone(value):
 class CurrencyUtils(object):
     @staticmethod
     def to_usd(amount, currency):
-        actual_amount = amount / (EXCHANGE_RATE if currency == LBP else 1)
+        actual_amount = amount / (Constants.EXCHANGE_RATE if currency == Constants.LBP else 1)
         return actual_amount
 
     @staticmethod
@@ -74,7 +77,7 @@ class CurrencyUtils(object):
         Normalizes the amount to USD using the EXCHANGE_RATE
         """
         actual_amount = CurrencyUtils.to_usd(amount, currency)
-        actual_amount = actual_amount * (-1 if transaction_type == DEBIT else 1)
+        actual_amount = actual_amount * (-1 if transaction_type == Constants.DEBIT else 1)
         return actual_amount
 
 class Team(models.Model):
@@ -103,7 +106,7 @@ class Person(models.Model):
         (ENGAGED, 'Engaged'),
         (MARRIED, 'Married'),
         (WIDOWED, 'Windowed'),
-        (COMPLICATE, 'Complicated'),
+        (COMPLICATE, 'It\'s Complicated'),
     )
     team = models.ForeignKey(Team, blank=True, null=True)
     first_name = models.CharField(max_length=30)
@@ -113,7 +116,17 @@ class Person(models.Model):
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default=MALE,)
     marital_status = models.CharField(max_length=10, choices=MARITAL_CHOICES, default=SINGLE,)
     squad_member = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
     food_allergies = models.CharField(max_length=200, blank=True, null=True)
+    birth_date.alphabetic_filter = True
+    
+    @property
+    def month(self):
+        """
+        Returns the month of birth of a person
+        """
+        year, month, day = self.birth_date.split('-')
+        return calendar.month_name[int(month)]
 
     def __str__(self):
         return self.first_name + ' ' + self.last_name.upper()
@@ -123,11 +136,11 @@ class Person(models.Model):
 
 class Membership(models.Model):
     person = models.ForeignKey(Person)
-    year = models.IntegerField(('year'), choices=YEAR_CHOICES, default=datetime.datetime.now().year)
-    month = models.CharField(max_length=20, choices=MONTH_CHOICES, default=JANUARY,)
+    year = models.IntegerField(('year'), choices=Constants.YEAR_CHOICES, default=datetime.datetime.now().year)
+    month = models.CharField(max_length=20, choices=Constants.MONTH_CHOICES, default=Constants.JANUARY,)
     collected_by = models.ForeignKey('Person', limit_choices_to={'squad_member': True}, related_name='collected_by')
     amount = models.DecimalField(default=10, max_digits=15, decimal_places=2)
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=USD) # editable = False
+    currency = models.CharField(max_length=3, choices=Constants.CURRENCY_CHOICES, default=Constants.USD) # editable = False
     notes = models.TextField(max_length=400, blank=True)
 
     def __str__(self):
@@ -141,7 +154,7 @@ class Membership(models.Model):
         #save a record in Transactions
         transaction = Transaction()
         transaction.amount = self.amount
-        transaction.transaction_type = CREDIT
+        transaction.transaction_type = Constants.CREDIT
         transaction.currency = self.currency
         transaction.transaction_date = datetime.datetime.now()
         transaction.total = transaction.total_amount
@@ -156,7 +169,7 @@ class Payment(models.Model):
     event = models.ForeignKey('Event')
     amount = models.DecimalField(default=10, max_digits=15, decimal_places=2)
     payment_date = models.DateTimeField(auto_now=True)
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=USD,)
+    currency = models.CharField(max_length=3, choices=Constants.CURRENCY_CHOICES, default=Constants.USD,)
     invoice = models.FileField(blank=True, upload_to='invoices')
     notes = models.TextField(max_length=400, blank=True)
 
@@ -170,7 +183,7 @@ class Payment(models.Model):
         transaction = Transaction()
         transaction.event = self.event
         transaction.amount = self.amount
-        transaction.transaction_type = DEBIT
+        transaction.transaction_type = Constants.DEBIT
         transaction.currency = self.currency
         transaction.transaction_date = datetime.datetime.now()
         transaction.total = transaction.total_amount
@@ -226,6 +239,7 @@ class Event(models.Model):
         return total_cost
 
     event_type = models.ForeignKey(EventType)
+    order_from = models.ManyToManyField(Place, related_name='places')
     organizer = models.ForeignKey(Person, limit_choices_to={'squad_member': True}, related_name='event_organizer')
     squad = models.ManyToManyField(Person, limit_choices_to={'squad_member': True}, related_name='squad')
     targets = models.ManyToManyField(Person, related_name='targets')
@@ -277,19 +291,19 @@ class Transaction(models.Model):
 
         #if self.total is None:
         self.total = self.total_amount
-        if self.transaction_type == DEBIT and self.total == 0:
-            raise ValidationError(INSUFFICIENT_FUNDS)
+        if self.transaction_type == Constants.DEBIT and self.total == 0:
+            raise ValidationError(Constants.INSUFFICIENT_FUNDS)
         actual_amount = CurrencyUtils.normalize_transaction_amount(self.amount, self.currency, self.transaction_type)
         if decimal.Decimal(actual_amount) + self.total < 0:
-            raise ValidationError(INSUFFICIENT_FUNDS)
+            raise ValidationError(Constants.INSUFFICIENT_FUNDS)
         self.total = self.total_amount + decimal.Decimal(actual_amount)
         super(Transaction, self).save(*args, **kwargs)
 
     membership = models.ForeignKey(Membership, blank=True, null=True)
     event = models.ForeignKey(Event, blank=True, null=True)
-    transaction_type = models.CharField(max_length=1, choices=TRANSACTION_CHOICES, default=DEBIT,)
+    transaction_type = models.CharField(max_length=1, choices=Constants.TRANSACTION_CHOICES, default=Constants.DEBIT,)
     amount = models.DecimalField(default=10, max_digits=15, decimal_places=2)
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=USD,)
+    currency = models.CharField(max_length=3, choices=Constants.CURRENCY_CHOICES, default=Constants.USD,)
     transaction_date = models.DateTimeField(auto_now=True)
     total = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.CharField(max_length=10, blank=True)
