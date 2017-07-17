@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'festivus.apps.FestivusConfig',
     'django_extensions',
+    'grappelli',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -70,6 +71,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'carbon.wsgi.application'
+GRAPPELLI_ADMIN_TITLE = 'Festivus Administration'
 
 
 # Database

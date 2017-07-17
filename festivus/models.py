@@ -120,6 +120,10 @@ class Person(models.Model):
     food_allergies = models.CharField(max_length=200, blank=True, null=True)
     birth_date.alphabetic_filter = True
     
+    @staticmethod
+    def autocomplete_search_fields():
+        return ("first_name__icontains", "last_name__icontains",)
+    
     @property
     def month(self):
         """
@@ -142,6 +146,7 @@ class Membership(models.Model):
     amount = models.DecimalField(default=10, max_digits=15, decimal_places=2)
     currency = models.CharField(max_length=3, choices=Constants.CURRENCY_CHOICES, default=Constants.USD) # editable = False
     notes = models.TextField(max_length=400, blank=True)
+
 
     def __str__(self):
         return "Membership of " + str(self.person) + " for " + str(self.month) + " " + str(self.year)
@@ -252,6 +257,10 @@ class Event(models.Model):
 
     def __str__(self):
         return self.name
+    
+    @staticmethod
+    def autocomplete_search_fields():
+        return ("name__icontains",)
 
 class Transaction(models.Model):
 

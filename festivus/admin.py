@@ -47,6 +47,14 @@ class MembershipAdmin(admin.ModelAdmin):
             return self.readonly_fields + ('amount', 'currency')
         return self.readonly_fields
 
+    # define the raw_id_fields
+    raw_id_fields = ('person',)
+    # define the autocomplete_lookup_fields
+    autocomplete_lookup_fields = {
+        'fk': ['person'],
+        #'m2m': ['collected_by'],
+    }
+
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ('event', 'amount', 'currency', 'payment_date', 'notes')
     list_filter = ('event__event_type__name', 'payment_date', 'notes')
@@ -58,6 +66,14 @@ class PaymentAdmin(admin.ModelAdmin):
         if obj: # disable editing the amount of an existing payment since it links to transactions
             return self.readonly_fields + ('amount', 'currency')
         return self.readonly_fields
+
+    # define the raw_id_fields
+    raw_id_fields = ('event',)
+    # define the autocomplete_lookup_fields
+    autocomplete_lookup_fields = {
+        'fk': ['event'],
+        #'m2m': ['collected_by'],
+    }
 
 class PlaceClassificationAdmin(admin.ModelAdmin):
     search_fields = ('name',)
@@ -74,6 +90,14 @@ class EventAdmin(admin.ModelAdmin):
     list_display = ('name', 'event_type', 'organizer', 'event_date', 'gift_card', 'total')
     list_filter = ('event_type__name', 'event_date', 'order_from__name')
     search_fields = ('event_date', 'notes', 'location')
+    
+    # define the raw_id_fields
+    raw_id_fields = ('targets',)
+    # define the autocomplete_lookup_fields
+    autocomplete_lookup_fields = {
+        'm2m': ['targets'],
+        #'m2m': ['collected_by'],
+    }
 
 class TransactionAdmin(admin.ModelAdmin):
     #Add event_total To list_display and assert it's equal to total
